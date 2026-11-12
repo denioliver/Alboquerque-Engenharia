@@ -25,6 +25,7 @@ Os textos e dados de contato que ainda dependem de validação estão centraliza
 - React Router
 - Lucide React
 - CSS responsivo
+- Firebase Hosting
 
 ## Requisitos
 
@@ -101,3 +102,21 @@ npm run build
 ```
 
 Os arquivos gerados ficam na pasta `dist`.
+
+## Deploy no Firebase Hosting
+
+Instale e autentique a CLI do Firebase:
+
+```bash
+npm install -g firebase-tools
+firebase login
+```
+
+Gere a versão de produção e publique:
+
+```bash
+npm run build
+firebase deploy --only hosting
+```
+
+O arquivo `firebase.json` já está configurado para publicar `dist` e redirecionar as rotas do React Router para `index.html`.

@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react'
 import { Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { siteConfig, whatsappLink } from './config/siteConfig'
+import { gmailLink, siteConfig, whatsappLink } from './config/siteConfig'
 import { getProjects } from './repositories/projectRepository'
 import type { Project } from './types/project'
 import './App.css'
@@ -239,8 +239,8 @@ function Contact() {
         <div><p className="eyebrow light"><span /> Vamos conversar</p><h2>Seu próximo projeto <em>começa aqui.</em></h2><p>Conte para a gente o que você está planejando. Nossa equipe está pronta para ouvir e construir junto.</p></div>
         <div className="contact-links">
           <a href={whatsappLink()} target="_blank" rel="noreferrer" className="contact-main"><MessageCircle size={23} /> Falar pelo WhatsApp <ArrowUpRight size={19} /></a>
-          <a href={`mailto:${siteConfig.email}`}><Mail size={18} /> {siteConfig.email}</a>
-          <a href={`tel:${siteConfig.phone.replace(/\D/g, '')}`}><Phone size={18} /> {siteConfig.phone}</a>
+          <a href={gmailLink()} target="_blank" rel="noreferrer"><Mail size={18} /> {siteConfig.email}</a>
+          <a href={whatsappLink(`Olá! Gostaria de falar sobre um orçamento pelo telefone ${siteConfig.phone}.`)} target="_blank" rel="noreferrer"><Phone size={18} /> {siteConfig.phone}</a>
           <span><span className="contact-dot" /> Atendimento em toda a região</span>
         </div>
       </div>
@@ -249,7 +249,7 @@ function Contact() {
 }
 
 function Footer() {
-  return <footer className="footer"><div className="container footer-grid"><div><img src={siteConfig.logo} alt="Albuquerque Engenharia" /><p>Construindo soluções que permanecem.</p></div><div><span className="footer-label">Navegação</span>{navItems.map(([label, id]) => <a key={id} href={`/#${id}`}>{label}</a>)}</div><div><span className="footer-label">Contato</span><a href={whatsappLink()} target="_blank" rel="noreferrer">WhatsApp</a><a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a><a href={siteConfig.instagram} target="_blank" rel="noreferrer"><Camera size={15} /> Instagram</a></div></div><div className="container footer-bottom"><span>© {new Date().getFullYear()} Albuquerque Engenharia</span><span>Feito para construir o amanhã.</span></div></footer>
+  return <footer className="footer"><div className="container footer-grid"><div><img src={siteConfig.logo} alt="Albuquerque Engenharia" /><p>Construindo soluções que permanecem.</p></div><div><span className="footer-label">Navegação</span>{navItems.map(([label, id]) => <a key={id} href={`/#${id}`}>{label}</a>)}</div><div><span className="footer-label">Contato</span><a href={whatsappLink()} target="_blank" rel="noreferrer">WhatsApp</a><a href={gmailLink()} target="_blank" rel="noreferrer">{siteConfig.email}</a><a href={siteConfig.instagram} target="_blank" rel="noreferrer"><Camera size={15} /> Instagram</a></div></div><div className="container footer-bottom"><span>© {new Date().getFullYear()} Albuquerque Engenharia</span><span>Feito para construir o amanhã.</span></div></footer>
 }
 
 function Home() {
