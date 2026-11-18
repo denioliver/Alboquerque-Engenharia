@@ -26,7 +26,7 @@ em { color: var(--orange); font-style: normal; }
 .light-link { color: #fff; }
 .hero-foot { display: flex; align-items: center; gap: 18px; margin-top: 126px; color: #e1dfec; font-size: .67rem; text-transform: uppercase; letter-spacing: .12em; }
 .hero-progress { width: 130px; height: 2px; background: #ffffff55; }.hero-progress i { display: block; width: 36%; height: 100%; background: var(--orange); }
-.scroll-cue { position: absolute; right: 5%; bottom: 38px; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid #ffffff66; border-radius: 50%; color: #fff; animation: bounce 2s infinite; }
+.scroll-cue { position: absolute; right: 5%; bottom: 38px; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid #ffffff66; border-radius: 50%; color: #fff; background: transparent; appearance: none; animation: bounce 2s infinite; }
 .section { padding: 105px 0; }.about-section { background: #fff; }
 .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 110px; align-items: center; }
 .about-copy h2, .section-heading h2, .detail-info h2 { margin: 0 0 25px; max-width: 520px; color: var(--blue-deep); font-family: var(--serif); font-size: clamp(2.2rem, 4vw, 3.8rem); line-height: 1.04; letter-spacing: -.06em; }

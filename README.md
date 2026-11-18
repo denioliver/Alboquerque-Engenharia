@@ -103,6 +103,39 @@ npm run build
 
 Os arquivos gerados ficam na pasta `dist`.
 
+## Painel administrativo
+
+O painel está disponível nas rotas `/admin/login`, `/admin/recuperar-senha`,
+`/admin/dashboard`, `/admin/obras`, `/admin/obras/nova`,
+`/admin/obras/:id/editar`, `/admin/usuarios` e `/admin/configuracoes`. O login usa Firebase
+Authentication; obras e imagens novas usam Firestore e Storage.
+
+A aba **Configurações do site**, exclusiva do proprietário, permite atualizar
+contatos, links, textos principais, logo e imagem de fundo da Hero. Os dados
+são salvos em `siteSettings/general` e passam a ser usados pelo site público.
+
+### Configuração do Firebase
+
+1. Crie os usuários no Firebase Authentication. Qualquer usuário autenticado
+   é tratado como proprietário do painel.
+2. Instale e compile as funções com
+   `npm install --prefix functions` e `npm run build --prefix functions`.
+3. Publique regras e funções somente após revisar o projeto:
+   `firebase deploy --only firestore:rules,storage,functions`.
+4. Acesse o Dashboard e execute **Migrar obras locais**.
+   A operação usa IDs estáveis e pode ser repetida sem recriar os registros.
+
+O botão **Criar novo acesso** chama a Callable Function `createAdminUser` e o
+botão de exclusão remove definitivamente a conta do Firebase Authentication.
+A senha provisória não é persistida no Firestore nem registrada em logs. A
+recuperação de senha usa `sendPasswordResetEmail` e não revela se o e-mail
+existe. Uploads são convertidos para WebP, redimensionados para até 1600 px,
+e acompanhados de uma miniatura de até 640 px.
+
+Firestore, Storage, Authentication e Cloud Functions podem gerar cobranças no
+plano Blaze. A aplicação reduz consumo com compressão e miniaturas, mas não
+há garantia de custo zero.
+
 ## Deploy no Firebase Hosting
 
 Instale e autentique a CLI do Firebase:

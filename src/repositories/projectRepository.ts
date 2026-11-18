@@ -121,7 +121,26 @@ function buildProjects(): Project[] {
 }
 
 const localProjects = buildProjects()
+const hiddenProjectsKey = 'albuquerque:hidden-local-projects'
+
+function getHiddenProjectIds() {
+  if (typeof window === 'undefined') return new Set<string>()
+  const stored = window.localStorage.getItem(hiddenProjectsKey)
+  if (!stored) return new Set<string>()
+  try {
+    return new Set(JSON.parse(stored) as string[])
+  } catch {
+    return new Set<string>()
+  }
+}
 
 export function getProjects(): Project[] {
-  return localProjects.filter((project) => project.published)
+  const hiddenProjectIds = getHiddenProjectIds()
+  return localProjects.filter((project) => project.published && !hiddenProjectIds.has(project.id))
+}
+
+export function removeLocalProject(id: string) {
+  const hiddenProjectIds = getHiddenProjectIds()
+  hiddenProjectIds.add(id)
+  window.localStorage.setItem(hiddenProjectsKey, JSON.stringify([...hiddenProjectIds]))
 }

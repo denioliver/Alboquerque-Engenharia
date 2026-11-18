@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function owner() { return signedIn() && request.auth.token.email == 'contato@engenhariaalbuquerque.com.br'; }
+    function editor() { return signedIn() && (request.auth.token.role in ['owner', 'editor'] || request.auth.token.email == 'contato@engenhariaalbuquerque.com.br'); }
+    match /projects/{projectId}/{folder}/{fileName} {
+      allow read: if resource.metadata.published == 'true' || editor();
+      allow write: if editor()
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow delete: if editor();
+    }
+    match /site-config/{fileName} {
+      allow read: if true;
+      allow write: if owner()
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow delete: if owner();
+    }
+  }
+}

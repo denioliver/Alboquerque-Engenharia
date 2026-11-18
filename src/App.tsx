@@ -19,10 +19,12 @@ import {
   X,
 } from 'lucide-react'
 import { Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { gmailLink, siteConfig, whatsappLink } from './config/siteConfig'
+import { gmailLink, whatsappLink } from './config/siteConfig'
 import { getProjects } from './repositories/projectRepository'
 import type { Project } from './types/project'
+import { useSiteSettings } from './config/siteSettings'
 import './App.css'
+import { AdminRoutes } from './admin/Admin'
 
 const projects = getProjects()
 
@@ -47,6 +49,7 @@ function scrollToId(id: string) {
 }
 
 function Header() {
+  const settings = useSiteSettings()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
@@ -71,7 +74,7 @@ function Header() {
     <header className={`site-header ${scrolled ? 'is-scrolled' : ''}`}>
       <div className="container header-inner">
         <Link className="brand" to="/" aria-label="Albuquerque Engenharia - início">
-          <img src={siteConfig.logo} alt="Albuquerque Engenharia" />
+          <img src={settings.logoUrl} alt={settings.brandName} />
         </Link>
         <button className="menu-toggle" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="Abrir menu">
           {open ? <X size={25} /> : <Menu size={25} />}
@@ -80,7 +83,7 @@ function Header() {
           {navItems.map(([label, id]) => (
             <button key={id} onClick={() => goTo(id)}>{label}</button>
           ))}
-          <a className="nav-cta" href={whatsappLink()} target="_blank" rel="noreferrer">
+          <a className="nav-cta" href={whatsappLink(undefined, settings.whatsappNumber)} target="_blank" rel="noreferrer">
             Solicitar orçamento <ArrowUpRight size={16} />
           </a>
         </nav>
@@ -94,16 +97,17 @@ function ButtonLink({ children, href, secondary = false }: { children: React.Rea
 }
 
 function Hero() {
+  const settings = useSiteSettings()
   return (
     <section className="hero" aria-labelledby="hero-title">
-      <img className="hero-image" src={siteConfig.heroImage} alt="Equipe e estrutura de uma obra de engenharia" fetchPriority="high" />
+      <img className="hero-image" src={settings.heroImageUrl} alt={settings.heroEyebrow} fetchPriority="high" />
       <div className="hero-overlay" />
       <div className="container hero-content">
-        <p className="eyebrow light"><span /> Engenharia, construção e reformas</p>
-        <h1 id="hero-title">Engenharia que transforma projetos <em>em realidade.</em></h1>
-        <p className="hero-description">Soluções em engenharia, construção e reformas, com planejamento, qualidade e compromisso em cada etapa.</p>
+        <p className="eyebrow light"><span /> {settings.heroEyebrow}</p>
+        <h1 id="hero-title">{settings.heroTitle}</h1>
+        <p className="hero-description">{settings.heroDescription}</p>
         <div className="hero-actions">
-          <ButtonLink href={whatsappLink()}>Solicitar orçamento</ButtonLink>
+          <ButtonLink href={whatsappLink(undefined, settings.whatsappNumber)}>Solicitar orçamento</ButtonLink>
           <a className="text-link light-link" href="#obras">Conhecer nossas obras <ArrowUpRight size={17} /></a>
         </div>
         <div className="hero-foot">
@@ -112,12 +116,13 @@ function Hero() {
           <span>Construindo com propósito</span>
         </div>
       </div>
-      <a className="scroll-cue" href="#sobre" aria-label="Rolar para conhecer a empresa"><ChevronDown size={20} /></a>
+      <button className="scroll-cue" type="button" onClick={() => scrollToId('sobre')} aria-label="Rolar para conhecer a empresa"><ChevronDown size={20} /></button>
     </section>
   )
 }
 
 function About() {
+  const settings = useSiteSettings()
   const aboutImages = projects.slice(0, 4).map((project) => ({
     src: project.coverImage,
     alt: project.title,
@@ -140,12 +145,12 @@ function About() {
       <div className="container about-grid">
         <div className="about-copy">
           <p className="eyebrow"><span /> Sobre a empresa</p>
-          <h2>Projetamos o futuro com <em>base sólida.</em></h2>
-          <p className="lead">A Albuquerque Engenharia atua na construção, reforma e manutenção de espaços que fazem parte da vida das pessoas.</p>
-          <p>Com uma abordagem próxima e responsável, unimos visão técnica, planejamento e execução cuidadosa para transformar cada desafio em uma solução duradoura.</p>
+          <h2>{settings.aboutTitle}</h2>
+          <p className="lead">{settings.aboutLead}</p>
+          <p>{settings.aboutDescription}</p>
           <div className="about-actions">
             <a className="text-link" href="#contato">Fale com nossa equipe <ArrowUpRight size={17} /></a>
-            <img className="about-logo" src={siteConfig.logo} alt="Albuquerque Engenharia" />
+            <img className="about-logo" src={settings.logoUrl} alt={settings.brandName} />
           </div>
         </div>
         <div className="about-visual">
@@ -182,12 +187,13 @@ function About() {
 }
 
 function Services() {
+  const settings = useSiteSettings()
   return (
     <section className="section services-section" id="servicos">
       <div className="container">
         <div className="section-heading">
-          <div><p className="eyebrow"><span /> O que fazemos</p><h2>Soluções para cada <em>etapa.</em></h2></div>
-          <p>Da primeira ideia ao último acabamento, nossa experiência trabalha a favor do seu projeto.</p>
+          <div><p className="eyebrow"><span /> O que fazemos</p><h2>{settings.servicesTitle}</h2></div>
+          <p>{settings.servicesDescription}</p>
         </div>
         <div className="services-grid">
           {services.map(({ title, description, icon: Icon }, index) => (
@@ -233,14 +239,15 @@ function FeaturedProjects() {
 }
 
 function Contact() {
+  const settings = useSiteSettings()
   return (
     <section className="contact-section" id="contato">
       <div className="container contact-grid">
-        <div><p className="eyebrow light"><span /> Vamos conversar</p><h2>Seu próximo projeto <em>começa aqui.</em></h2><p>Conte para a gente o que você está planejando. Nossa equipe está pronta para ouvir e construir junto.</p></div>
+        <div><p className="eyebrow light"><span /> Vamos conversar</p><h2>{settings.contactTitle}</h2><p>{settings.contactDescription}</p></div>
         <div className="contact-links">
-          <a href={whatsappLink()} target="_blank" rel="noreferrer" className="contact-main"><MessageCircle size={23} /> Falar pelo WhatsApp <ArrowUpRight size={19} /></a>
-          <a href={gmailLink()} target="_blank" rel="noreferrer"><Mail size={18} /> {siteConfig.email}</a>
-          <a href={whatsappLink(`Olá! Gostaria de falar sobre um orçamento pelo telefone ${siteConfig.phone}.`)} target="_blank" rel="noreferrer"><Phone size={18} /> {siteConfig.phone}</a>
+          <a href={whatsappLink(undefined, settings.whatsappNumber)} target="_blank" rel="noreferrer" className="contact-main"><MessageCircle size={23} /> Falar pelo WhatsApp <ArrowUpRight size={19} /></a>
+          <a href={gmailLink(settings.email)} target="_blank" rel="noreferrer"><Mail size={18} /> {settings.email}</a>
+          <a href={whatsappLink(`Olá! Gostaria de falar sobre um orçamento pelo telefone ${settings.phone}.`, settings.whatsappNumber)} target="_blank" rel="noreferrer"><Phone size={18} /> {settings.phone}</a>
           <span><span className="contact-dot" /> Atendimento em toda a região</span>
         </div>
       </div>
@@ -249,7 +256,8 @@ function Contact() {
 }
 
 function Footer() {
-  return <footer className="footer"><div className="container footer-grid"><div><img src={siteConfig.logo} alt="Albuquerque Engenharia" /><p>Construindo soluções que permanecem.</p></div><div><span className="footer-label">Navegação</span>{navItems.map(([label, id]) => <a key={id} href={`/#${id}`}>{label}</a>)}</div><div><span className="footer-label">Contato</span><a href={whatsappLink()} target="_blank" rel="noreferrer">WhatsApp</a><a href={gmailLink()} target="_blank" rel="noreferrer">{siteConfig.email}</a><a href={siteConfig.instagram} target="_blank" rel="noreferrer"><Camera size={15} /> Instagram</a></div></div><div className="container footer-bottom"><span>© {new Date().getFullYear()} Albuquerque Engenharia</span><span>Feito para construir o amanhã.</span></div></footer>
+  const settings = useSiteSettings()
+  return <footer className="footer"><div className="container footer-grid"><div><img src={settings.logoUrl} alt={settings.brandName} /><p>{settings.footerTagline}</p></div><div><span className="footer-label">Navegação</span>{navItems.map(([label, id]) => <a key={id} href={`/#${id}`}>{label}</a>)}</div><div><span className="footer-label">Contato</span><a href={whatsappLink(undefined, settings.whatsappNumber)} target="_blank" rel="noreferrer">WhatsApp</a><a href={gmailLink(settings.email)} target="_blank" rel="noreferrer">{settings.email}</a><a href={settings.instagram} target="_blank" rel="noreferrer"><Camera size={15} /> Instagram</a></div></div><div className="container footer-bottom"><span>© {new Date().getFullYear()} {settings.brandName}</span><span>Feito para construir o amanhã.</span></div></footer>
 }
 
 function Home() {
@@ -284,7 +292,7 @@ function App() {
     if (hash) setTimeout(() => scrollToId(hash), 50)
     else window.scrollTo(0, 0)
   }, [location])
-  return <Routes><Route path="/" element={<Home />} /><Route path="/obras" element={<Projects />} /><Route path="/obras/:slug" element={<ProjectDetails />} /><Route path="*" element={<ProjectDetails />} /></Routes>
+  return <Routes><Route path="/admin/*" element={<AdminRoutes />} /><Route path="/" element={<Home />} /><Route path="/obras" element={<Projects />} /><Route path="/obras/:slug" element={<ProjectDetails />} /><Route path="*" element={<ProjectDetails />} /></Routes>
 }
 
 export default App
