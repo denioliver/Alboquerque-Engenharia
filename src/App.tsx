@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react'
 import { Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { gmailLink, whatsappLink } from './config/siteConfig'
+import { gmailLink, normalizeInstagram, whatsappLink } from './config/siteConfig'
 import { getProjects } from './repositories/projectRepository'
 import type { Project } from './types/project'
 import { useSiteSettings } from './config/siteSettings'
@@ -257,7 +257,8 @@ function Contact() {
 
 function Footer() {
   const settings = useSiteSettings()
-  return <footer className="footer"><div className="container footer-grid"><div><img src={settings.logoUrl} alt={settings.brandName} /><p>{settings.footerTagline}</p></div><div><span className="footer-label">Navegação</span>{navItems.map(([label, id]) => <a key={id} href={`/#${id}`}>{label}</a>)}</div><div><span className="footer-label">Contato</span><a href={whatsappLink(undefined, settings.whatsappNumber)} target="_blank" rel="noreferrer">WhatsApp</a><a href={gmailLink(settings.email)} target="_blank" rel="noreferrer">{settings.email}</a><a href={settings.instagram} target="_blank" rel="noreferrer"><Camera size={15} /> Instagram</a></div></div><div className="container footer-bottom"><span>© {new Date().getFullYear()} {settings.brandName}</span><span>Feito para construir o amanhã.</span></div></footer>
+  const instagramUrl = normalizeInstagram(settings.instagram)
+  return <footer className="footer"><div className="container footer-grid"><div><img src={settings.logoUrl} alt={settings.brandName} /><p>{settings.footerTagline}</p></div><div><span className="footer-label">Navegação</span>{navItems.map(([label, id]) => <a key={id} href={`/#${id}`}>{label}</a>)}</div><div><span className="footer-label">Contato</span><a href={whatsappLink(undefined, settings.whatsappNumber)} target="_blank" rel="noreferrer">WhatsApp</a><a href={gmailLink(settings.email)} target="_blank" rel="noreferrer">{settings.email}</a>{instagramUrl && <a href={instagramUrl} target="_blank" rel="noreferrer"><Camera size={15} /> Instagram</a>}</div></div><div className="container footer-bottom"><span>© {new Date().getFullYear()} {settings.brandName}</span><span>Feito para construir o amanhã.</span></div></footer>
 }
 
 function Home() {
@@ -273,6 +274,7 @@ function Projects() {
 
 function ProjectDetails() {
   const { slug } = useParams()
+  const settings = useSiteSettings()
   const project = projects.find((item) => item.slug === slug)
   const [active, setActive] = useState(0)
   const [lightbox, setLightbox] = useState(false)
@@ -282,7 +284,7 @@ function ProjectDetails() {
   const previous = () => setActive((current) => (current - 1 + (project?.images.length || 1)) % (project?.images.length || 1))
 
   if (!project) return <><Header /><main className="not-found"><h1>Obra não encontrada.</h1><Link className="button" to="/obras">Voltar ao portfólio <ArrowUpRight size={17} /></Link></main><Footer /></>
-  return <><Header /><main className="project-detail"><div className="container detail-top"><button className="back-link" onClick={() => navigate('/obras')}><ChevronLeft size={17} /> Voltar ao portfólio</button><div className="detail-meta"><span>{project.category}</span><span>Projeto em destaque</span></div><h1>{project.title}</h1><p>{project.description}</p></div><div className="container gallery"><button className="gallery-main" onClick={() => setLightbox(true)}><img src={image} alt={`${project.title} - imagem ${active + 1}`} /><span className="gallery-hint"><Play size={14} fill="currentColor" /> Ampliar imagem</span></button><div className="gallery-thumbs">{project.images.map((item, index) => <button className={index === active ? 'active' : ''} onClick={() => setActive(index)} key={item}><img src={item} alt="" /></button>)}</div></div><div className="container detail-info"><div><p className="eyebrow"><span /> Escopo realizado</p><h2>Detalhes do projeto</h2></div><div><p>{project.shortDescription}</p><ul>{project.servicesPerformed.map((service) => <li key={service}><Check size={16} /> {service}</li>)}</ul><ButtonLink href={whatsappLink(`Olá! Conheci o projeto ${project.title} no site e gostaria de solicitar um orçamento.`)}>Falar sobre um projeto</ButtonLink></div></div><Contact /></main><Footer />{lightbox && <div className="lightbox" role="dialog" aria-modal="true" aria-label="Galeria ampliada" onClick={() => setLightbox(false)}><button className="lightbox-close" onClick={() => setLightbox(false)}><X /></button><button className="lightbox-arrow prev" onClick={(event) => { event.stopPropagation(); previous() }}><ChevronLeft /></button><img src={image} alt={project.title} onClick={(event) => event.stopPropagation()} /><button className="lightbox-arrow next" onClick={(event) => { event.stopPropagation(); next() }}><ChevronRight /></button></div>}</>
+  return <><Header /><main className="project-detail"><div className="container detail-top"><button className="back-link" onClick={() => navigate('/obras')}><ChevronLeft size={17} /> Voltar ao portfólio</button><div className="detail-meta"><span>{project.category}</span><span>Projeto em destaque</span></div><h1>{project.title}</h1><p>{project.description}</p></div><div className="container gallery"><button className="gallery-main" onClick={() => setLightbox(true)}><img src={image} alt={`${project.title} - imagem ${active + 1}`} /><span className="gallery-hint"><Play size={14} fill="currentColor" /> Ampliar imagem</span></button><div className="gallery-thumbs">{project.images.map((item, index) => <button className={index === active ? 'active' : ''} onClick={() => setActive(index)} key={item}><img src={item} alt="" /></button>)}</div></div><div className="container detail-info"><div><p className="eyebrow"><span /> Escopo realizado</p><h2>Detalhes do projeto</h2></div><div><p>{project.shortDescription}</p><ul>{project.servicesPerformed.map((service) => <li key={service}><Check size={16} /> {service}</li>)}</ul>  <ButtonLink href={whatsappLink(`Olá! Conheci o projeto ${project.title} no site e gostaria de solicitar um orçamento.`, settings.whatsappNumber)}>Falar sobre um projeto</ButtonLink></div></div><Contact /></main><Footer />{lightbox && <div className="lightbox" role="dialog" aria-modal="true" aria-label="Galeria ampliada" onClick={() => setLightbox(false)}><button className="lightbox-close" onClick={() => setLightbox(false)}><X /></button><button className="lightbox-arrow prev" onClick={(event) => { event.stopPropagation(); previous() }}><ChevronLeft /></button><img src={image} alt={project.title} onClick={(event) => event.stopPropagation()} /><button className="lightbox-arrow next" onClick={(event) => { event.stopPropagation(); next() }}><ChevronRight /></button></div>}</>
 }
 
 function App() {

@@ -10,9 +10,31 @@ export const siteConfig = {
   whatsappNumber: '5571996618635',
 }
 
+export function normalizeWhatsAppNumber(value: string) {
+  const digits = value.replace(/\D/g, '')
+  if (!digits) return ''
+  if (digits.startsWith('55')) return digits
+  return `55${digits.replace(/^0/, '')}`
+}
+
+export function normalizeInstagram(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+
+  const handle = trimmed
+    .replace(/^@/, '')
+    .replace(/^instagram\.com\//i, '')
+    .replace(/^www\.instagram\.com\//i, '')
+    .replace(/^\/+|\/+$/g, '')
+
+  return handle ? `https://www.instagram.com/${handle}/` : ''
+}
+
 export function whatsappLink(message = 'Olá! Conheci a Albuquerque Engenharia pelo site e gostaria de solicitar um orçamento.', whatsappNumber = siteConfig.whatsappNumber) {
-  return whatsappNumber
-    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
+  const normalizedNumber = normalizeWhatsAppNumber(whatsappNumber)
+  return normalizedNumber
+    ? `https://wa.me/${normalizedNumber}?text=${encodeURIComponent(message)}`
     : `https://wa.me/?text=${encodeURIComponent(message)}`
 }
 

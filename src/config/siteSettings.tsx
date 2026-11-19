@@ -29,7 +29,25 @@ const SiteSettingsContext = createContext<SiteSettings>(defaultSiteSettings)
 
 export function SiteSettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState(defaultSiteSettings)
-  useEffect(() => { void getSiteSettings().then((remote) => { if (remote) setSettings((current) => ({ ...current, ...remote })) }).catch(() => undefined) }, [])
+  useEffect(() => {
+    void getSiteSettings()
+      .then((remote) => {
+        if (remote) setSettings((current) => ({
+          ...current,
+          ...remote,
+          logoUrl: typeof remote.logoUrl === 'string' && remote.logoUrl.length > 0 && !remote.logoUrl.startsWith('/assets/')
+            ? remote.logoUrl
+            : current.logoUrl,
+          heroImageUrl: typeof remote.heroImageUrl === 'string' && remote.heroImageUrl.length > 0 && !remote.heroImageUrl.startsWith('/assets/')
+            ? remote.heroImageUrl
+            : current.heroImageUrl,
+          phone: remote.phone || current.phone,
+          whatsappNumber: remote.whatsappNumber || current.whatsappNumber,
+          instagram: remote.instagram || current.instagram,
+        }))
+      })
+      .catch(() => undefined)
+  }, [])
   const value = useMemo(() => settings, [settings])
   return <SiteSettingsContext.Provider value={value}>{children}</SiteSettingsContext.Provider>
 }

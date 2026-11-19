@@ -33,25 +33,17 @@ exports.ensureOwnerRole = (0, https_1.onCall)(async (request) => {
         active: true,
         updatedAt: firestore_1.FieldValue.serverTimestamp(),
     }, { merge: true });
-    await admin.doc('siteSettings/general').set({
-        brandName: 'Albuquerque Engenharia',
-        phone: '',
-        email: ownerEmail,
-        instagram: '',
-        whatsappNumber: '',
-        heroEyebrow: 'Engenharia, construção e reformas',
-        heroTitle: 'Engenharia que transforma projetos em realidade.',
-        heroDescription: 'Soluções em engenharia, construção e reformas, com planejamento, qualidade e compromisso em cada etapa.',
-        aboutTitle: 'Projetamos o futuro com base sólida.',
-        aboutLead: 'A Albuquerque Engenharia atua na construção, reforma e manutenção de espaços que fazem parte da vida das pessoas.',
-        aboutDescription: 'Com uma abordagem próxima e responsável, unimos visão técnica, planejamento e execução cuidadosa para transformar cada desafio em uma solução duradoura.',
-        servicesTitle: 'Soluções para cada etapa.',
-        servicesDescription: 'Da primeira ideia ao último acabamento, nossa experiência trabalha a favor do seu projeto.',
-        contactTitle: 'Seu próximo projeto começa aqui.',
-        contactDescription: 'Conte para a gente o que você está planejando. Nossa equipe está pronta para ouvir e construir junto.',
-        footerTagline: 'Construindo soluções que permanecem.',
-        updatedAt: firestore_1.FieldValue.serverTimestamp(),
-    }, { merge: true });
+    const settingsRef = admin.doc('siteSettings/general');
+    const settings = await settingsRef.get();
+    const current = settings.exists ? settings.data() : {};
+    const repair = {};
+    if (typeof current?.phone !== 'string' || !current.phone.trim())
+        repair.phone = '(71) 99661-8635';
+    if (typeof current?.whatsappNumber !== 'string' || !current.whatsappNumber.trim())
+        repair.whatsappNumber = '5571996618635';
+    if (Object.keys(repair).length > 0) {
+        await settingsRef.set(repair, { merge: true });
+    }
     return { role: 'owner' };
 });
 exports.createAdminUser = (0, https_1.onCall)(async (request) => {

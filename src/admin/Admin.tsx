@@ -9,6 +9,7 @@ import { listAdminProjects, removeProject, saveProject } from '../repositories/a
 import { uploadProjectImage, validateImageFiles } from '../services/imageService'
 import type { AdminProject, ProjectImage } from '../types/admin'
 import { defaultSiteSettings } from '../config/siteSettings'
+import { normalizeInstagram, normalizeWhatsAppNumber } from '../config/siteConfig'
 import { getSiteSettings, saveSiteSettings, uploadSiteImage } from '../repositories/siteSettingsRepository'
 import type { SiteSettings } from '../types/siteSettings'
 import adminLogo from '../assets/logo/logo-albuquerque-engenharia.png'
@@ -18,6 +19,23 @@ import './admin.css'
 function messageFor(error: unknown) {
   if (error instanceof Error && error.message) return error.message
   return 'Não foi possível concluir a operação. Tente novamente.'
+}
+
+function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+}
+
+function formatWhatsApp(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 13)
+  if (digits.startsWith('55')) {
+    const localNumber = digits.slice(2).slice(0, 11)
+    return localNumber ? `+55 ${formatPhone(localNumber)}` : '+55'
+  }
+  return formatPhone(digits)
 }
 
 function useAdminAuth() {
@@ -64,7 +82,7 @@ function AdminLayout({ auth, children }: { auth: AuthState; children: React.Reac
   const [menuOpen, setMenuOpen] = useState(false)
   const links: Array<readonly [string, string, LucideIcon]> = [['/admin/dashboard', 'Dashboard', LayoutDashboard], ['/admin/obras', 'Obras', Pencil], ...(auth.role === 'owner' ? [['/admin/usuarios', 'Usuários', Users] as const, ['/admin/configuracoes', 'Configurações', Settings] as const] : [])]
   return <div className="admin-shell">
-    <aside className={menuOpen ? 'is-open' : ''}><div className="admin-brand"><img className="admin-brand-logo" src={adminLogo} alt="Albuquerque Engenharia" /></div><nav>{links.map(([to, label, Icon]) => <Link onClick={() => setMenuOpen(false)} to={to} key={to}><Icon size={18} />{label}</Link>)}</nav><button className="admin-logout" onClick={() => void logout()}><LogOut size={18} />Sair</button></aside>
+    <aside className={menuOpen ? 'is-open' : ''}><a className="admin-brand" href="/" aria-label="Abrir site"><img className="admin-brand-logo" src={adminLogo} alt="Albuquerque Engenharia" /></a><nav>{links.map(([to, label, Icon]) => <Link onClick={() => setMenuOpen(false)} to={to} key={to}><Icon size={18} />{label}</Link>)}</nav><button className="admin-logout" onClick={() => void logout()}><LogOut size={18} />Sair</button></aside>
     <div className="admin-content"><header><button className="admin-menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menu"><Menu /></button><span>{auth.displayName || auth.user?.email}</span><button onClick={() => void logout()}><LogOut size={17} /></button></header>{children}</div>
   </div>
 }
@@ -185,18 +203,116 @@ function UsersAdmin() {
 
 function SiteSettingsAdmin() {
   const [form, setForm] = useState<SiteSettings>(defaultSiteSettings)
+  const [savedForm, setSavedForm] = useState<SiteSettings>(defaultSiteSettings)
+  const [editing, setEditing] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [busy, setBusy] = useState(false)
-  useEffect(() => { void getSiteSettings().then((settings) => { if (settings) setForm((current) => ({ ...current, ...settings })) }).catch((error) => setFeedback(messageFor(error))) }, [])
-  const setField = (field: keyof SiteSettings, value: string) => setForm((current) => ({ ...current, [field]: value }))
+  useEffect(() => {
+    void getSiteSettings()
+      .then((settings) => {
+        if (settings) {
+          setForm((current) => {
+            const loaded = {
+              ...current,
+              ...settings,
+              logoUrl: typeof settings.logoUrl === 'string' && settings.logoUrl.length > 0 && !settings.logoUrl.startsWith('/assets/')
+                ? settings.logoUrl
+                : current.logoUrl,
+              heroImageUrl: typeof settings.heroImageUrl === 'string' && settings.heroImageUrl.length > 0 && !settings.heroImageUrl.startsWith('/assets/')
+                ? settings.heroImageUrl
+                : current.heroImageUrl,
+              phone: formatPhone(settings.phone || current.phone),
+              whatsappNumber: formatWhatsApp(settings.whatsappNumber || current.whatsappNumber),
+              instagram: settings.instagram || current.instagram,
+            }
+            setSavedForm(loaded)
+            return loaded
+          })
+        }
+      })
+      .catch((error) => setFeedback(messageFor(error)))
+  }, [])
+  const setField = (field: keyof SiteSettings, value: string) => setForm((current) => ({
+    ...current,
+    [field]: field === 'phone'
+      ? formatPhone(value)
+      : field === 'whatsappNumber'
+        ? formatWhatsApp(value)
+        : value,
+  }))
   const upload = async (event: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'heroImageUrl', name: 'logo' | 'hero') => {
     const file = event.target.files?.[0]
     if (!file) return
     try { setBusy(true); setField(field, await uploadSiteImage(file, name)); setFeedback('Imagem carregada. Clique em salvar para publicar.') } catch (error) { setFeedback(messageFor(error)) } finally { setBusy(false) }
   }
-  const submit = async (event: React.FormEvent) => { event.preventDefault(); try { setBusy(true); await saveSiteSettings(form); setFeedback('Configurações salvas com sucesso.') } catch (error) { setFeedback(messageFor(error)) } finally { setBusy(false) } }
-  const textFields: Array<[keyof SiteSettings, string, string]> = [['brandName', 'Nome da empresa', 'text'], ['phone', 'Telefone', 'text'], ['email', 'E-mail', 'email'], ['instagram', 'Instagram', 'url'], ['whatsappNumber', 'WhatsApp (somente números)', 'text'], ['heroEyebrow', 'Texto acima do título', 'text'], ['heroTitle', 'Título principal', 'text'], ['heroDescription', 'Descrição principal', 'textarea'], ['aboutTitle', 'Título sobre a empresa', 'text'], ['aboutLead', 'Resumo sobre a empresa', 'textarea'], ['aboutDescription', 'Descrição sobre a empresa', 'textarea'], ['servicesTitle', 'Título dos serviços', 'text'], ['servicesDescription', 'Descrição dos serviços', 'textarea'], ['contactTitle', 'Título do contato', 'text'], ['contactDescription', 'Descrição do contato', 'textarea'], ['footerTagline', 'Frase do rodapé', 'text']]
-  return <section className="admin-page"><div className="admin-page-heading"><div><span className="admin-kicker">Personalização</span><h1>Configurações do site</h1></div></div><form className="project-form settings-form" onSubmit={submit}><div className="settings-upload-grid"><div className="upload-box"><label><Upload size={20} />Nova logo<input type="file" accept="image/*" onChange={(event) => void upload(event, 'logoUrl', 'logo')} /></label><img className="settings-image-preview" src={form.logoUrl} alt="Logo atual" /></div><div className="upload-box"><label><Upload size={20} />Nova imagem de fundo<input type="file" accept="image/*" onChange={(event) => void upload(event, 'heroImageUrl', 'hero')} /></label><img className="settings-image-preview" src={form.heroImageUrl} alt="Imagem atual da tela inicial" /></div></div><div className="settings-fields">{textFields.map(([field, label, type]) => <label key={field}>{label}{type === 'textarea' ? <textarea rows={3} value={form[field]} onChange={(event) => setField(field, event.target.value)} /> : <input type={type} value={form[field]} onChange={(event) => setField(field, event.target.value)} />}</label>)}</div>{feedback && <p className="admin-feedback">{feedback}</p>}<div className="form-actions"><button className="admin-button" disabled={busy}>{busy ? 'Salvando...' : 'Salvar configurações'}</button></div></form></section>
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    try {
+      setBusy(true)
+      const normalized = {
+        ...form,
+        phone: formatPhone(form.phone),
+        whatsappNumber: normalizeWhatsAppNumber(form.whatsappNumber),
+        instagram: normalizeInstagram(form.instagram),
+      }
+      await saveSiteSettings(normalized)
+      const saved = { ...normalized, whatsappNumber: formatWhatsApp(normalized.whatsappNumber) }
+      setForm(saved)
+      setSavedForm(saved)
+      setEditing(false)
+      setFeedback('Configurações salvas com sucesso.')
+    } catch (error) {
+      setFeedback(messageFor(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const startEditing = () => {
+    setSavedForm(form)
+    setEditing(true)
+    setFeedback('')
+  }
+  const cancelEditing = () => {
+    setForm(savedForm)
+    setEditing(false)
+    setFeedback('')
+  }
+  const textFields: Array<[keyof SiteSettings, string, string]> = [['brandName', 'Nome da empresa', 'text'], ['phone', 'Telefone', 'text'], ['email', 'E-mail', 'email'], ['instagram', 'Instagram (@usuario ou URL)', 'text'], ['whatsappNumber', 'WhatsApp (com ou sem código do país)', 'text'], ['heroEyebrow', 'Texto acima do título', 'text'], ['heroTitle', 'Título principal', 'text'], ['heroDescription', 'Descrição principal', 'textarea'], ['aboutTitle', 'Título sobre a empresa', 'text'], ['aboutLead', 'Resumo sobre a empresa', 'textarea'], ['aboutDescription', 'Descrição sobre a empresa', 'textarea'], ['servicesTitle', 'Título dos serviços', 'text'], ['servicesDescription', 'Descrição dos serviços', 'textarea'], ['contactTitle', 'Título do contato', 'text'], ['contactDescription', 'Descrição do contato', 'textarea'], ['footerTagline', 'Frase do rodapé', 'text']]
+  return (
+    <section className="admin-page">
+      <div className="admin-page-heading">
+        <div><span className="admin-kicker">Personalização</span><h1>Configurações do site</h1></div>
+        {!editing && <button type="button" className="admin-button" onClick={startEditing}><Pencil size={16} />Editar campos</button>}
+      </div>
+      <form className="project-form settings-form" onSubmit={submit}>
+        <div className={`settings-upload-grid ${editing ? '' : 'is-readonly'}`}>
+          <div className="upload-box">
+            {editing ? <label><Upload size={20} />Nova logo<input type="file" accept="image/*" onChange={(event) => void upload(event, 'logoUrl', 'logo')} /></label> : <span><Upload size={20} />Logo atual</span>}
+            <img className="settings-image-preview" src={form.logoUrl} alt="Logo atual" />
+          </div>
+          <div className="upload-box">
+            {editing ? <label><Upload size={20} />Nova imagem de fundo<input type="file" accept="image/*" onChange={(event) => void upload(event, 'heroImageUrl', 'hero')} /></label> : <span><Upload size={20} />Imagem de fundo atual</span>}
+            <img className="settings-image-preview" src={form.heroImageUrl} alt="Imagem atual da tela inicial" />
+          </div>
+        </div>
+        <div className="settings-fields">
+          {textFields.map(([field, label, type]) => (
+            <label key={field}>
+              {label}
+              {type === 'textarea'
+                ? <textarea rows={3} disabled={!editing} value={form[field]} onChange={(event) => setField(field, event.target.value)} />
+                : <input type={type} disabled={!editing} value={form[field]} onChange={(event) => setField(field, event.target.value)} />}
+            </label>
+          ))}
+        </div>
+        {feedback && <p className="admin-feedback">{feedback}</p>}
+        {editing && <div className="form-actions">
+          <button type="button" className="admin-button secondary" onClick={cancelEditing} disabled={busy}>Cancelar</button>
+          <button className="admin-button" disabled={busy}>{busy ? 'Salvando...' : 'Salvar configurações'}</button>
+        </div>}
+      </form>
+    </section>
+  )
 }
 
 export function AdminRoutes() {

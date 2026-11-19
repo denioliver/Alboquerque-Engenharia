@@ -6,6 +6,8 @@ import {
   type User,
 } from 'firebase/auth'
 import { auth, db } from '../config/firebase'
+import { firebaseApp } from '../config/firebase'
+import { getFunctions, httpsCallable } from 'firebase/functions'
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import type { AdminRole } from '../types/admin'
 
@@ -47,35 +49,15 @@ export async function getAdminIdentity(user: User): Promise<{ role: AdminRole | 
   const role = await getRole(user)
   if (!role) return { role: null, displayName: null }
   if (user.email?.toLowerCase() === ownerEmail) {
-    await withTimeout(Promise.all([
-      setDoc(doc(db, 'adminProfiles', user.uid), {
+    await withTimeout(httpsCallable(getFunctions(firebaseApp), 'ensureOwnerRole')(), 5000).catch(() => undefined)
+    await withTimeout(setDoc(doc(db, 'adminProfiles', user.uid), {
         uid: user.uid,
         email: ownerEmail,
         displayName: 'Rodrigo Cavalcante',
         role: 'owner',
         active: true,
         updatedAt: serverTimestamp(),
-      }, { merge: true }),
-      setDoc(doc(db, 'siteSettings', 'general'), {
-        brandName: 'Albuquerque Engenharia',
-        phone: '',
-        email: ownerEmail,
-        instagram: '',
-        whatsappNumber: '',
-        heroEyebrow: 'Engenharia, construção e reformas',
-        heroTitle: 'Engenharia que transforma projetos em realidade.',
-        heroDescription: 'Soluções em engenharia, construção e reformas, com planejamento, qualidade e compromisso em cada etapa.',
-        aboutTitle: 'Projetamos o futuro com base sólida.',
-        aboutLead: 'A Albuquerque Engenharia atua na construção, reforma e manutenção de espaços que fazem parte da vida das pessoas.',
-        aboutDescription: 'Com uma abordagem próxima e responsável, unimos visão técnica, planejamento e execução cuidadosa para transformar cada desafio em uma solução duradoura.',
-        servicesTitle: 'Soluções para cada etapa.',
-        servicesDescription: 'Da primeira ideia ao último acabamento, nossa experiência trabalha a favor do seu projeto.',
-        contactTitle: 'Seu próximo projeto começa aqui.',
-        contactDescription: 'Conte para a gente o que você está planejando. Nossa equipe está pronta para ouvir e construir junto.',
-        footerTagline: 'Construindo soluções que permanecem.',
-        updatedAt: serverTimestamp(),
-      }, { merge: true }),
-    ]), 5000).catch(() => undefined)
+      }, { merge: true }), 5000).catch(() => undefined)
     return { role: 'owner', displayName: 'Rodrigo Cavalcante' }
   }
 
